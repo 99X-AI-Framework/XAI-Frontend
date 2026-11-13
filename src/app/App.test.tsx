@@ -1,10 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
-import { authApi } from '@/components/ui/authentication'
+import { authApi } from '@/components/ui/authentication/api/authApi'
 import { App } from './App'
 
-vi.mock('@/components/ui/authentication', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/components/ui/authentication')>()
+vi.mock('@/components/ui/authentication/api/authApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/components/ui/authentication/api/authApi')>()
   return {
     ...actual,
     authApi: {
