@@ -20,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [user, setUser] = useState<AuthUser | null>(null)
   const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [expiresIn, setExpiresIn] = useState<number | null>(null)
 
   const refreshTimerRef = useRef<number | null>(null)
   // Deduplicate concurrent refresh calls (e.g. React StrictMode double-mount or multi-401).
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSession = useCallback(() => {
     clearRefreshTimer()
     setAccessToken(null)
+    setExpiresIn(null)
     setUser(null)
     setStatus('unauthenticated')
   }, [clearRefreshTimer])
@@ -48,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const res = await authApi.refresh()
         setAccessToken(res.access_token)
+        setExpiresIn(res.expires_in)
         setUser(res.user)
         setStatus('authenticated')
         return res
@@ -57,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const retryRes = await authApi.refresh()
             setAccessToken(retryRes.access_token)
+            setExpiresIn(retryRes.expires_in)
             setUser(retryRes.user)
             setStatus('authenticated')
             return retryRes
@@ -76,31 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return promise
   }, [clearSession])
 
-  const scheduleRefresh = useCallback(
-    (expiresInSeconds: number) => {
-      clearRefreshTimer()
-      // Refresh 60s before expiry (or at half-life for very short dev TTLs).
-      const leadSeconds = expiresInSeconds > 90 ? expiresInSeconds - 60 : Math.max(10, Math.floor(expiresInSeconds / 2))
-      refreshTimerRef.current = window.setTimeout(() => {
-        void refreshSession().then((res) => {
-          if (res) {
-            scheduleRefresh(res.expires_in)
-          }
-        })
-      }, leadSeconds * 1000)
-    },
-    [clearRefreshTimer, refreshSession],
-  )
-
-  const setAuthenticated = useCallback(
-    (auth: AuthenticatedResponse) => {
-      setAccessToken(auth.access_token)
-      setUser(auth.user)
-      setStatus('authenticated')
-      scheduleRefresh(auth.expires_in)
-    },
-    [scheduleRefresh],
-  )
+  const setAuthenticated = useCallback((auth: AuthenticatedResponse) => {
+    setAccessToken(auth.access_token)
+    setExpiresIn(auth.expires_in)
+    setUser(auth.user)
+    setStatus('authenticated')
+  }, [])
 
   const logout = useCallback(async () => {
     try {
@@ -111,17 +96,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession])
 
   useEffect(() => {
-    let active = true
-    void refreshSession().then((res) => {
-      if (active && res) {
-        scheduleRefresh(res.expires_in)
-      }
-    })
-    return () => {
-      active = false
-      clearRefreshTimer()
+    void refreshSession()
+  }, [refreshSession])
+
+  useEffect(() => {
+    clearRefreshTimer()
+    if (status !== 'authenticated' || !accessToken || expiresIn === null) {
+      return
     }
-  }, [refreshSession, scheduleRefresh, clearRefreshTimer])
+    const leadSeconds = expiresIn > 90 ? expiresIn - 60 : Math.max(10, Math.floor(expiresIn / 2))
+    refreshTimerRef.current = window.setTimeout(() => {
+      void refreshSession()
+    }, leadSeconds * 1000)
+    return clearRefreshTimer
+  }, [status, accessToken, expiresIn, refreshSession, clearRefreshTimer])
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -138,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext)
   if (!ctx) {

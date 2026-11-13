@@ -18,11 +18,12 @@ function FoundationPage() {
 }
 export const router = createBrowserRouter([
   {
+    path: '/', element: <LandingPage />
+  },
+  {
     element: <RequireAuth />,
     children: [{ path: '/', element: <FoundationPage /> }],
   },
   ...authRoutes,
 ])
 
-
-export const router = createBrowserRouter([{ path: '/', element: <LandingPage /> }])

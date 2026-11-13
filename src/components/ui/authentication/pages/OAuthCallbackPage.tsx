@@ -23,15 +23,18 @@ export function OAuthCallbackPage() {
 
   const statusParam = searchParams.get('status')
   const errorParam = searchParams.get('error')
-  const [errorText, setErrorText] = useState<string | null>(
-    errorParam ? (OAUTH_ERROR_COPY[errorParam] ?? 'Social sign-in failed. Please try again.') : null,
-  )
+  const [errorText, setErrorText] = useState<string | null>(() => {
+    if (errorParam) {
+      return OAUTH_ERROR_COPY[errorParam] ?? 'Social sign-in failed. Please try again.'
+    }
+    if (statusParam !== 'success') {
+      return 'Unexpected sign-in callback state.'
+    }
+    return null
+  })
 
   useEffect(() => {
     if (errorParam || statusParam !== 'success') {
-      if (!errorParam) {
-        setErrorText('Unexpected sign-in callback state.')
-      }
       return
     }
     let active = true
