@@ -33,7 +33,6 @@ export function VerifyOtpPage() {
   useEffect(() => {
     if (!challengeId || challenge) return
     let active = true
-    setLoadingChallenge(true)
     authApi
       .getChallenge(challengeId)
       .then((data) => {
