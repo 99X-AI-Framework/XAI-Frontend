@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Eye, Cpu, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LandingPage() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900">
       {/* Header */}
@@ -15,9 +18,25 @@ export default function LandingPage() {
           <Link className="text-sm font-medium text-slate-600 hover:text-slate-900" to="#architecture">Architecture</Link>
           <Link className="text-sm font-medium text-slate-600 hover:text-slate-900" to="#docs">Docs</Link>
           <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-600 hover:text-slate-900">GitHub</a>
-            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-medium">
-                Launch Console <ArrowRight className="inline w-4 h-4 ml-1" />
-            </button>
+          {!isAuthenticated ? (
+            <div className="ml-2 flex items-center space-x-4 border-l border-slate-200 pl-4">
+              <Link className="text-sm font-medium text-slate-600 hover:text-slate-900" to="/sign-in">Sign in</Link>
+              <Link className="rounded-full border border-indigo-600 px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50" to="/create-account">Create account</Link>
+              <Link
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-medium"
+                to="/sign-in"
+              >
+                Launch Dashboard <ArrowRight className="inline w-4 h-4 ml-1" />
+              </Link>
+            </div>
+          ) : (
+            <Link
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-medium"
+              to="/dashboard"
+            >
+              Launch Dashboard <ArrowRight className="inline w-4 h-4 ml-1" />
+            </Link>
+          )}
         </nav>
       </header>
 
