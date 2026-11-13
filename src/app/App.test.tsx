@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import { authApi } from '@/components/ui/authentication'
 import { App } from './App'
@@ -45,7 +45,9 @@ test('hides auth links for signed-in visitors', async () => {
   })
   render(<App />)
 
-  expect(await screen.findByRole('link', { name: /launch dashboard/i })).toHaveAttribute('href', '/dashboard')
+  await waitFor(() => {
+    expect(screen.getByRole('link', { name: /launch dashboard/i })).toHaveAttribute('href', '/dashboard')
+  })
   expect(screen.queryByRole('link', { name: 'Sign in' })).not.toBeInTheDocument()
   expect(screen.queryByRole('link', { name: 'Create account' })).not.toBeInTheDocument()
 })
