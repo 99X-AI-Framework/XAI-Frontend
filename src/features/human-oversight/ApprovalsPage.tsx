@@ -1,22 +1,32 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, X, ShieldAlert, Clock3, CheckCheck, MessageSquare, Search } from 'lucide-react'
-import { approvals as data, type Approval, type ApprovalStatus } from '@/features/dashboard/data'
+import { type Approval, type ApprovalStatus } from '@/features/dashboard/data'
 import { demoService } from '@/features/dashboard/service'
 import { Page } from '@/components/layout/Page'
 import { Badge, Card, Metric, SectionTitle } from '@/components/shared/Primitives'
+import { useDialog } from '@/hooks/useDialog'
 export function ApprovalsPage() {
   const [status, setStatus] = useState<ApprovalStatus | 'All'>('All')
   const [selected, setSelected] = useState<Approval | null>(null)
   const [comment, setComment] = useState('')
   const [confirm, setConfirm] = useState<'Approved' | 'Rejected' | null>(null)
   const [search, setSearch] = useState('')
+  const closeDialog = () => setSelected(null)
+  const dialogRef = useDialog(Boolean(selected), closeDialog)
   const client = useQueryClient()
-  useQuery({ queryKey: ['approvals'], queryFn: async () => data })
+  const approvalsQuery = useQuery({
+    queryKey: ['approvals'],
+    queryFn: demoService.getApprovals,
+    refetchInterval: 2000,
+    refetchIntervalInBackground: true,
+  })
+  const data = approvalsQuery.data ?? []
   const mutation = useMutation({
     mutationFn: ({ decision }: { decision: 'Approved' | 'Rejected' }) =>
       demoService.decideApproval(selected!.id, decision, comment),
     onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['approvals'] })
       client.invalidateQueries({ queryKey: ['overview'] })
       setSelected(null)
       setConfirm(null)
@@ -43,8 +53,8 @@ export function ApprovalsPage() {
           value={data.filter((x) => x.risk === 'Critical' || x.risk === 'High').length}
           icon={ShieldAlert}
         />
-        <Metric label="Approved today" value="12" icon={CheckCheck} />
-        <Metric label="Rejected today" value="03" icon={X} />
+        <Metric label="Approved today" value="0" icon={CheckCheck} />
+        <Metric label="Rejected today" value="0" icon={X} />
       </div>
       <Card className="table-panel">
         <div className="toolbar">
@@ -84,8 +94,29 @@ export function ApprovalsPage() {
               </tr>
             </thead>
             <tbody>
-              {list.map((a) => (
-                <tr key={a.id} onClick={() => setSelected(a)} className="click-row">
+              {list.length === 0 ? (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="table-empty">
+                      <strong>No approval requests match these filters</strong>
+                      <span>Try another status or search term.</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                list.map((a) => (
+                <tr
+                  key={a.id}
+                  onClick={() => setSelected(a)}
+                  className="click-row"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      setSelected(a)
+                    }
+                  }}
+                >
                   <td>
                     <b>{a.agent}</b>
                     <small>
@@ -115,7 +146,8 @@ export function ApprovalsPage() {
                   </td>
                   <td>{a.execution}</td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -127,13 +159,20 @@ export function ApprovalsPage() {
             if (e.target === e.currentTarget) setSelected(null)
           }}
         >
-          <section className="modal detail-modal">
+          <section
+            className="modal detail-modal"
+            ref={dialogRef as React.RefObject<HTMLElement>}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="approval-detail-title"
+            tabIndex={-1}
+          >
             <header>
               <div>
                 <span className="eyebrow">
                   {selected.id} · {selected.time}
                 </span>
-                <h2>{selected.action}</h2>
+                <h2 id="approval-detail-title">{selected.action}</h2>
                 <p>Proposed by {selected.agent}</p>
               </div>
               <button className="icon-button" onClick={() => setSelected(null)}>
@@ -180,22 +219,29 @@ export function ApprovalsPage() {
                 placeholder="Add context for the audit record..."
               />
             </label>
-            <div className="demo-note">
-              Decision is simulated in this browser session. Approval status is separate from
-              execution status.
-            </div>
+            <div className="demo-note">Decisions are saved to the governance backend. The waiting agent resumes after the backend verifies the decision and authorization receipt.</div>
             <footer>
               <button className="secondary-button" onClick={() => setConfirm('Rejected')}>
                 <X size={15} /> Reject
               </button>
-              <button className="primary-button" onClick={() => setConfirm('Approved')}>
+              <button
+                className="primary-button"
+                disabled={mutation.isPending}
+                onClick={() => setConfirm('Approved')}
+              >
                 <Check size={15} /> Approve action
               </button>
             </footer>
             {confirm && (
               <div className="confirm-overlay">
-                <Card>
-                  <SectionTitle>Confirm {confirm.toLowerCase()}?</SectionTitle>
+                <Card
+                  role="alertdialog"
+                  aria-modal="true"
+                  aria-labelledby="approval-confirm-title"
+                >
+                  <SectionTitle>
+                    <span id="approval-confirm-title">Confirm {confirm.toLowerCase()}?</span>
+                  </SectionTitle>
                   <p>
                     This records a simulated decision for the exact tool and parameter snapshot
                     shown above.
@@ -206,11 +252,17 @@ export function ApprovalsPage() {
                     </button>
                     <button
                       className="primary-button"
+                      disabled={mutation.isPending}
                       onClick={() => mutation.mutate({ decision: confirm })}
                     >
-                      Confirm {confirm.toLowerCase()}
+                      {mutation.isPending ? 'Saving…' : `Confirm ${confirm.toLowerCase()}`}
                     </button>
                   </footer>
+                  {mutation.isError && (
+                    <p className="field-error" role="alert">
+                      We could not save this decision. Try again.
+                    </p>
+                  )}
                 </Card>
               </div>
             )}

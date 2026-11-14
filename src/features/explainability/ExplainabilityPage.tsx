@@ -5,7 +5,12 @@ import { Page } from '@/components/layout/Page'
 import { Badge, Card, SectionTitle } from '@/components/shared/Primitives'
 export function ExplainabilityPage() {
   const [execution, setExecution] = useState(executions[1].id)
-  const current = executions.find((e) => e.id === execution)!
+  const [agent, setAgent] = useState('All agents')
+  const availableExecutions = executions.filter(
+    (e) => agent === 'All agents' || e.agent === agent,
+  )
+  const current = availableExecutions.find((e) => e.id === execution) ?? availableExecutions[0]
+  if (!current) return null
   return (
     <Page
       title="Explainability"
@@ -14,7 +19,17 @@ export function ExplainabilityPage() {
       <div className="explorer-select">
         <label>
           Agent
-          <select>
+          <select
+            value={agent}
+            onChange={(e) => {
+              const nextAgent = e.target.value
+              setAgent(nextAgent)
+              const nextExecution = executions.find(
+                (item) => nextAgent === 'All agents' || item.agent === nextAgent,
+              )
+              if (nextExecution) setExecution(nextExecution.id)
+            }}
+          >
             <option>All agents</option>
             {[...new Set(executions.map((e) => e.agent))].map((a) => (
               <option key={a}>{a}</option>
@@ -24,11 +39,11 @@ export function ExplainabilityPage() {
         <label>
           Execution
           <select value={execution} onChange={(e) => setExecution(e.target.value)}>
-            {executions.map((e) => (
+            {availableExecutions.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.id} · {e.agent}
               </option>
-            ))}
+              ))}
           </select>
         </label>
       </div>

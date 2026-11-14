@@ -8,39 +8,57 @@ import { SettingsPage } from '@/features/dashboard/SettingsPage'
 import { ApprovalsPage } from '@/features/human-oversight/ApprovalsPage'
 import { ExplainabilityPage } from '@/features/explainability/ExplainabilityPage'
 import { ReportsPage } from '@/features/policy-audit/ReportsPage'
-import { projects } from '@/features/dashboard/data'
+import { AgentsPage } from '@/features/integrations/AgentsPage'
+import { LandingPage } from './LandingPage'
+import { authRoutes, RequireAuth } from '@/components/ui/authentication'
+import { RouteErrorPage } from './RouteErrorPage'
 
 // eslint-disable-next-line react-refresh/only-export-components
 function ProjectGuard({ children }: { children: React.ReactNode }) {
   const { projectId } = useParams()
-  return projectId && projects.some((project) => project.id === projectId) ? (
+  return projectId ? (
     children
   ) : (
-    <Navigate to="/" replace />
+    <Navigate to="/projects" replace />
   )
 }
 export const router = createBrowserRouter([
-  { path: '/', element: <ProjectsPage /> },
-  { path: '/teams', element: <TeamsPage /> },
   {
-    path: '/projects/:projectId',
-    element: (
-      <ProjectGuard>
-        <AppShell />
-      </ProjectGuard>
-    ),
+    errorElement: <RouteErrorPage />,
     children: [
-      { index: true, element: <Navigate to="dashboard" replace /> },
-      { path: 'dashboard', element: <OverviewPage /> },
-      { path: 'approvals', element: <ApprovalsPage /> },
-      { path: 'executions', element: <ExecutionsPage /> },
-      { path: 'explainability', element: <ExplainabilityPage /> },
-      { path: 'reports', element: <ReportsPage /> },
+      { path: '/', element: <LandingPage /> },
+      { path: '/landing', element: <LandingPage /> },
+      {
+        element: <RequireAuth />,
+        children: [
+          { path: '/projects', element: <ProjectsPage /> },
+          { path: '/teams', element: <TeamsPage /> },
+          {
+            path: '/projects/:projectId',
+            element: (
+              <ProjectGuard>
+                <AppShell />
+              </ProjectGuard>
+            ),
+            children: [
+              { index: true, element: <Navigate to="dashboard" replace /> },
+              { path: 'dashboard', element: <OverviewPage /> },
+              { path: 'agents', element: <AgentsPage /> },
+              { path: 'approvals', element: <ApprovalsPage /> },
+              { path: 'executions', element: <ExecutionsPage /> },
+              { path: 'explainability', element: <ExplainabilityPage /> },
+              { path: 'reports', element: <ReportsPage /> },
+            ],
+          },
+          {
+            path: '/settings',
+            element: <AppShell />,
+            children: [{ index: true, element: <SettingsPage /> }],
+          },
+        ],
+      },
+      { path: '*', element: <RouteErrorPage /> },
     ],
   },
-  {
-    path: '/settings',
-    element: <AppShell />,
-    children: [{ index: true, element: <SettingsPage /> }],
-  },
+  ...authRoutes,
 ])

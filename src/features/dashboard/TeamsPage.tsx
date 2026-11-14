@@ -7,8 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from 'react-router-dom'
 import { projects } from './data'
 import { demoService } from './service'
-import { Badge, Card, Metric, WorkspaceTabs } from '@/components/shared/Primitives'
+import { AsyncState, Badge, Card, Metric, WorkspaceTabs } from '@/components/shared/Primitives'
 import { Page } from '@/components/layout/Page'
+import { useDialog } from '@/hooks/useDialog'
 const inviteSchema = z.object({
   name: z.string().min(2, 'Enter the member name'),
   email: z.string().email('Enter a valid email'),
@@ -19,8 +20,10 @@ export function TeamsPage() {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<'All' | 'Active' | 'Invited'>('All')
   const [open, setOpen] = useState(false)
+  const closeDialog = () => setOpen(false)
+  const dialogRef = useDialog(open, closeDialog)
   const client = useQueryClient()
-  const { data = [] } = useQuery({
+  const { data = [], isPending, isError, refetch } = useQuery({
     queryKey: ['team-members'],
     queryFn: demoService.getTeamMembers,
   })
@@ -89,6 +92,25 @@ export function TeamsPage() {
           />
         </div>
         <Card className="table-panel">
+          {isPending && (
+            <AsyncState
+              title="Loading team members"
+              description="Fetching workspace access and membership details."
+            />
+          )}
+          {isError && (
+            <AsyncState
+              title="Team members are unavailable"
+              description="We could not load workspace membership. Check the API connection and try again."
+              action={
+                <button className="secondary-button" onClick={() => refetch()}>
+                  Try again
+                </button>
+              }
+            />
+          )}
+          {!isPending && !isError && (
+            <>
           <div className="toolbar">
             <div className="team-toolbar">
               <label className="filter-search">
@@ -173,6 +195,8 @@ export function TeamsPage() {
               </tbody>
             </table>
           </div>
+            </>
+          )}
         </Card>
         {open && (
           <div
@@ -183,11 +207,16 @@ export function TeamsPage() {
           >
             <form
               className="modal invite-modal"
+              ref={dialogRef as React.RefObject<HTMLFormElement>}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="invite-member-title"
+              tabIndex={-1}
               onSubmit={handleSubmit((values) => invite.mutate(values))}
             >
               <header>
                 <div>
-                  <h2>Add account</h2>
+                  <h2 id="invite-member-title">Invite member</h2>
                   <p>Invite a teammate to the demo workspace.</p>
                 </div>
                 <button type="button" className="icon-button" onClick={() => setOpen(false)}>
@@ -221,9 +250,14 @@ export function TeamsPage() {
                   Cancel
                 </button>
                 <button className="primary-button" type="submit">
-                  Create invitation
+                  {invite.isPending ? 'Creating…' : 'Create invitation'}
                 </button>
               </footer>
+              {invite.isError && (
+                <p className="field-error" role="alert">
+                  We could not create the invitation. Check the API connection and try again.
+                </p>
+              )}
             </form>
           </div>
         )}

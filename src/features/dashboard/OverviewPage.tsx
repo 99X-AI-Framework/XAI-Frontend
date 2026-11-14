@@ -14,46 +14,51 @@ import {
 } from 'recharts'
 import { Link, useParams } from 'react-router-dom'
 import { Page } from '@/components/layout/Page'
-import { Badge, Card, Metric, SectionTitle } from '@/components/shared/Primitives'
+import { AsyncState, Badge, Card, Metric, SectionTitle } from '@/components/shared/Primitives'
 import { demoService } from './service'
-const trend = [
-  { day: 'Mon', runs: 320, approvals: 28 },
-  { day: 'Tue', runs: 410, approvals: 34 },
-  { day: 'Wed', runs: 360, approvals: 25 },
-  { day: 'Thu', runs: 520, approvals: 43 },
-  { day: 'Fri', runs: 460, approvals: 38 },
-  { day: 'Sat', runs: 290, approvals: 19 },
-  { day: 'Sun', runs: 380, approvals: 31 },
-]
-const risks = [
-  { name: 'Low', value: 62, color: '#2563eb' },
-  { name: 'Medium', value: 24, color: '#f59e0b' },
-  { name: 'High', value: 11, color: '#f97316' },
-  { name: 'Critical', value: 3, color: '#dc2626' },
-]
+const trend: Array<{ day: string; runs: number; approvals: number }> = []
+const risks: Array<{ name: string; value: number; color: string }> = []
 export function OverviewPage() {
   const { projectId = 'atlas-research' } = useParams()
-  const { data } = useQuery({
+  const { data, isPending, isError, refetch } = useQuery({
     queryKey: ['overview', projectId],
     queryFn: () => demoService.getOverview(projectId),
   })
-  const d = data ?? { agents: [], approvals: [], executions: [], activity: [] }
   return (
     <div className="overview-page">
       <Page
         title="Overview"
         description="A real-time view of your agents, decisions, and governance activity."
       >
+        {isPending && (
+          <AsyncState
+            title="Loading workspace activity"
+            description="Fetching the latest agents, executions, and approval data."
+          />
+        )}
+        {isError && (
+          <AsyncState
+            title="Workspace data is unavailable"
+            description="We could not load this project. Check the API connection and try again."
+            action={
+              <button className="secondary-button" onClick={() => refetch()}>
+                Try again
+              </button>
+            }
+          />
+        )}
+        {!isPending && !isError && data && (
+          <>
         <div className="metrics-grid">
           <Metric
             label="Project agents"
-            value={d.agents.length.toString().padStart(2, '0')}
+            value={data.agents.length.toString().padStart(2, '0')}
             icon={Bot}
           />
-          <Metric label="Executions today" value={d.executions.length} icon={Activity} />
+          <Metric label="Executions today" value={data.executions.length} icon={Activity} />
           <Metric
             label="Pending approvals"
-            value={d.approvals.filter((x) => x.status === 'Pending').length}
+            value={data.approvals.filter((x) => x.status === 'Pending').length}
             icon={Clock3}
           />
         </div>
@@ -92,7 +97,7 @@ export function OverviewPage() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="donut-center">
-                <b>2,418</b>
+                <b>0</b>
                 <small>decisions</small>
               </div>
             </div>
@@ -129,7 +134,7 @@ export function OverviewPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {d.activity.map((row, i) => (
+                  {data.activity.map((row, i) => (
                     <tr key={i}>
                       <td>
                         <b>{row.agent}</b>
@@ -158,7 +163,7 @@ export function OverviewPage() {
           </Card>
           <Card className="agents-panel">
             <SectionTitle>Agent status</SectionTitle>
-            {d.agents.map((a) => (
+            {data.agents.map((a) => (
               <div className="agent-row" key={a.id}>
                 <div className="agent-symbol">{a.name[0]}</div>
                 <div className="agent-brief">
@@ -172,6 +177,8 @@ export function OverviewPage() {
             ))}
           </Card>
         </div>
+          </>
+        )}
       </Page>
     </div>
   )
