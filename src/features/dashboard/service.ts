@@ -8,6 +8,7 @@ export function getProjectRecords(projectId: string): {
   executions: Execution[]
   activity: Array<{ agent: string; event: string; risk: 'Low' | 'Medium' | 'High' | 'Critical'; time: string; status: string }>
 } {
+  void projectId
   return { agents: [], approvals: [], executions: [], activity: [] }
 }
 export const demoService = {
