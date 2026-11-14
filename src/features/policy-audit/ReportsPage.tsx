@@ -71,7 +71,17 @@ export function ReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {reports.map((r) => (
+              {reports.length === 0 ? (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="table-empty">
+                      <strong>No reports match your search</strong>
+                      <span>Try another report ID, agent, or execution.</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                reports.map((r) => (
                 <tr key={r.id}>
                   <td>
                     <b>{r.id}</b>
@@ -104,7 +114,8 @@ export function ReportsPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>

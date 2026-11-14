@@ -3,7 +3,10 @@ import { Bell, Monitor, Moon, Sun, UserRound, Save } from 'lucide-react'
 import { Page } from '@/components/layout/Page'
 import { Card, SectionTitle } from '@/components/shared/Primitives'
 export function SettingsPage() {
-  const [theme, setTheme] = useState(localStorage.getItem('demo-theme') ?? 'Light')
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('demo-theme')
+    return saved === 'dark' ? 'Dark' : saved === 'system' ? 'System' : 'Light'
+  })
   const [saved, setSaved] = useState(false)
   return (
     <Page title="Settings" description="Manage this browser’s workspace preferences.">
@@ -14,7 +17,7 @@ export function SettingsPage() {
           </SectionTitle>
           <label className="form-label">
             Display name
-            <input defaultValue="Jordan Davis" />
+            <input placeholder="Your name" />
           </label>
           <label className="form-label">
             Email
@@ -56,8 +59,13 @@ export function SettingsPage() {
                 onClick={() => {
                   const t = name as string
                   setTheme(t)
-                  localStorage.setItem('demo-theme', t)
-                  document.documentElement.dataset.theme = t.toLowerCase()
+                  const normalized = t.toLowerCase()
+                  localStorage.setItem('demo-theme', normalized)
+                  const resolved = normalized === 'system'
+                    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                    : normalized
+                  document.documentElement.dataset.theme = resolved
+                  window.dispatchEvent(new CustomEvent('demo-theme-change', { detail: resolved }))
                 }}
               >
                 <Icon size={17} />

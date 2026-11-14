@@ -1,9 +1,17 @@
-import type { ReactNode } from 'react'
+import type { HTMLAttributes, ReactNode } from 'react'
 import { FolderKanban, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils/cn'
-export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cn('panel', className)}>{children}</section>
+export function Card({
+  children,
+  className,
+  ...props
+}: HTMLAttributes<HTMLElement> & { children: ReactNode }) {
+  return (
+    <section className={cn('panel', className)} {...props}>
+      {children}
+    </section>
+  )
 }
 export function Metric({
   label,
@@ -47,10 +55,28 @@ export function SectionTitle({ children, meta }: { children: ReactNode; meta?: R
   )
 }
 
+export function AsyncState({
+  title,
+  description,
+  action,
+}: {
+  title: string
+  description: string
+  action?: ReactNode
+}) {
+  return (
+    <Card className="async-state" role="status">
+      <strong>{title}</strong>
+      <p>{description}</p>
+      {action}
+    </Card>
+  )
+}
+
 export function WorkspaceTabs({ active }: { active: 'projects' | 'teams' }) {
   return (
     <nav className="workspace-tabs" aria-label="Workspace navigation">
-      <Link className={`workspace-tab ${active === 'projects' ? 'tab-selected' : ''}`} to="/">
+      <Link className={`workspace-tab ${active === 'projects' ? 'tab-selected' : ''}`} to="/projects">
         <FolderKanban size={18} /> Projects
       </Link>
       <Link className={`workspace-tab ${active === 'teams' ? 'tab-selected' : ''}`} to="/teams">
