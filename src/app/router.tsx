@@ -10,6 +10,7 @@ import { ExplainabilityPage } from '@/features/explainability/ExplainabilityPage
 import { ReportsPage } from '@/features/policy-audit/ReportsPage'
 import { projects } from '@/features/dashboard/data'
 
+// eslint-disable-next-line react-refresh/only-export-components
 function ProjectGuard({ children }: { children: React.ReactNode }) {
   const { projectId } = useParams()
   return projectId && projects.some((project) => project.id === projectId) ? (
