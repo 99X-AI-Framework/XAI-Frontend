@@ -9,10 +9,3 @@ coverage
 !.vscode/extensions.json
 .DS_Store
 *.tsbuildinfo
-
-# Python (auth backend)
-.venv/
-__pycache__/
-*.py[cod]
-.pytest_cache/
-*.db
