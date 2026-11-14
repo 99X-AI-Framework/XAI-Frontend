@@ -2,7 +2,7 @@
 
 ## Workflow
 
-Create `feat/<module>/<feature-name>` or `fix/<module>/<issue-name>` branches from `develop`. Do not commit directly to `main` or `develop`. Open focused pull requests into `develop`, explain the change, and include tests or rationale when tests are not applicable.
+Create feature branches from `develop`. The repository accepts descriptive names such as `ui_integration`, as well as `feat/<module>/<feature-name>` and `fix/<module>/<issue-name>`. Do not commit directly to `main` or `develop`. Open focused pull requests into `develop`, explain the change, and include tests or rationale when tests are not applicable.
 
 ## Commits
 
