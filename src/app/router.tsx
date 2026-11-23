@@ -9,6 +9,7 @@ import { ApprovalsPage } from '@/features/human-oversight/ApprovalsPage'
 import { ExplainabilityPage } from '@/features/explainability/ExplainabilityPage'
 import { ReportsPage } from '@/features/policy-audit/ReportsPage'
 import { AgentsPage } from '@/features/integrations/AgentsPage'
+import { ExecutionTimelinePage } from '@/features/tracing/ExecutionTimelinePage'
 import { LandingPage } from './LandingPage'
 import { authRoutes, RequireAuth } from '@/components/ui/authentication'
 import { RouteErrorPage } from './RouteErrorPage'
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
               { path: 'agents', element: <AgentsPage /> },
               { path: 'approvals', element: <ApprovalsPage /> },
               { path: 'executions', element: <ExecutionsPage /> },
+              { path: 'tracing', element: <ExecutionTimelinePage /> },
               { path: 'explainability', element: <ExplainabilityPage /> },
               { path: 'reports', element: <ReportsPage /> },
             ],

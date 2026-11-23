@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ClipboardCheck,
   FileClock,
+  ListTree,
   FileText,
   LayoutDashboard,
   Menu,
@@ -41,6 +42,7 @@ export function AppShell() {
         { to: `${base}/agents`, label: 'Agents', icon: Bot },
         { to: `${base}/approvals`, label: 'Human approvals', icon: ClipboardCheck },
         { to: `${base}/executions`, label: 'Execution history', icon: FileClock },
+        { to: `${base}/tracing`, label: 'Execution timeline', icon: ListTree },
         { to: `${base}/explainability`, label: 'Explainability', icon: Workflow },
         { to: `${base}/reports`, label: 'Transparency reports', icon: FileText },
       ]
